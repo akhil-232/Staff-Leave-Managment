@@ -34,16 +34,16 @@ $db->setQuery($queryapi);
 $apivalues = $db->loadResult();
 ```
 
-### 3. Create WhatsApp Template
+### 3. No Template Required! 🎉
 
-You need to create a WhatsApp template named `leave_management_response` with:
+The webhook now sends **simple text messages** without requiring any WhatsApp templates. This makes it much easier to set up and use.
 
-- **Template Name**: `leave_management_response`
-- **Language**: English
-- **Category**: Utility
-- **Components**: 
-  - Body text with parameters
-  - Quick reply buttons (optional)
+**Benefits:**
+- ✅ No template approval needed
+- ✅ Instant setup
+- ✅ More flexible messaging
+- ✅ Supports interactive buttons
+- ✅ Works immediately
 
 ### 4. Update Phone Number
 
@@ -75,28 +75,39 @@ Run these requests in sequence:
 
 ## 📱 Expected WhatsApp Messages
 
-### Message 1: Welcome
+### Message 1: Welcome (with buttons)
 ```
 Dear Akshay, please choose any of the options listed below:
-[Raise a Leave Request] [View leave history]
-```
 
-### Message 2: Leave Types
+1. Raise a Leave Request
+2. View leave history
+```
+*Plus 2 interactive buttons*
+
+### Message 2: Leave Types (with buttons)
 ```
 Pick the relevant leave type to initiate your request.
-[1 Hour Permission] [Casual Leave (CL)] [On Duty (OD)] [Main Menu]
-```
 
-### Message 3: Date Input
+1. 1 Hour Permission
+2. Casual Leave (CL)
+3. On Duty (OD)
+```
+*Plus 3 interactive buttons*
+
+### Message 3: Simple Text
 ```
 Start date of leave (dd/mm/yyyy):
 ```
+*Simple text message*
 
-### Message 4: Confirmation
+### Message 4: Confirmation (with buttons)
 ```
 Dear Akshay, your Casual Leave (CL) request from 23-08-2025 to 25-08-2025 has been successfully registered. Please choose one of the options below to proceed with the approval process.
-[Yes] [No]
+
+1. Yes
+2. No
 ```
+*Plus 2 interactive buttons*
 
 ## 🔍 Response Format
 
@@ -141,6 +152,7 @@ error_log("WhatsApp Command: " . $postcommand);
 ### Test API Connection:
 
 ```bash
+# Test simple text message
 curl --location --request POST -k "https://your-api-endpoint.com/v1/messages" \
 --header 'D360-API-KEY: your-api-key' \
 --header 'Content-Type: application/json' \
@@ -148,25 +160,44 @@ curl --location --request POST -k "https://your-api-endpoint.com/v1/messages" \
   "messaging_product": "whatsapp",
   "recipient_type": "individual",
   "to": "+919876543210",
-  "type": "template",
-  "template": {
-    "namespace": "your-namespace",
-    "name": "leave_management_response",
-    "language": {
-      "code": "en",
-      "policy": "deterministic"
+  "type": "text",
+  "text": {
+    "body": "Hello! This is a test message without template."
+  }
+}'
+
+# Test interactive message with buttons
+curl --location --request POST -k "https://your-api-endpoint.com/v1/messages" \
+--header 'D360-API-KEY: your-api-key' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "+919876543210",
+  "type": "interactive",
+  "interactive": {
+    "type": "button",
+    "body": {
+      "text": "Please choose an option:"
     },
-    "components": [
-      {
-        "type": "body",
-        "parameters": [
-          {
-            "type": "text",
-            "text": "Test message"
+    "action": {
+      "buttons": [
+        {
+          "type": "reply",
+          "reply": {
+            "id": "btn_0",
+            "title": "Option 1"
           }
-        ]
-      }
-    ]
+        },
+        {
+          "type": "reply",
+          "reply": {
+            "id": "btn_1",
+            "title": "Option 2"
+          }
+        }
+      ]
+    }
   }
 }'
 ```

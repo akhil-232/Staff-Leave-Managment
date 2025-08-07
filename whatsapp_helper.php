@@ -196,35 +196,43 @@ function sendSimpleWhatsAppMessage($phonenumber, $message, $buttons = array()) {
     $apilink = "https://your-whatsapp-api-endpoint.com/v1/messages";
     $apikeyval = "your-api-key-here";
     
-    $data = [
-        "messaging_product" => "whatsapp",
-        "recipient_type" => "individual",
-        "to" => $phonenumber,
-        "type" => "text",
-        "text" => [
-            "body" => $message
-        ]
-    ];
-    
-    // Add interactive buttons if provided
-    if (!empty($buttons)) {
-        $data["type"] = "interactive";
-        $data["interactive"] = [
-            "type" => "button",
-            "body" => [
-                "text" => $message
-            ],
-            "action" => [
-                "buttons" => []
+    // If no buttons, send simple text message
+    if (empty($buttons)) {
+        $data = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $phonenumber,
+            "type" => "text",
+            "text" => [
+                "body" => $message
+            ]
+        ];
+    } else {
+        // If buttons provided, send interactive message
+        $data = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $phonenumber,
+            "type" => "interactive",
+            "interactive" => [
+                "type" => "button",
+                "body" => [
+                    "text" => $message
+                ],
+                "action" => [
+                    "buttons" => []
+                ]
             ]
         ];
         
-        foreach ($buttons as $index => $button) {
+        // Add buttons (max 3 buttons allowed by WhatsApp)
+        $buttonCount = min(count($buttons), 3);
+        for ($i = 0; $i < $buttonCount; $i++) {
             $data["interactive"]["action"]["buttons"][] = [
                 "type" => "reply",
                 "reply" => [
-                    "id" => "btn_" . $index,
-                    "title" => $button
+                    "id" => "btn_" . $i,
+                    "title" => $buttons[$i]
                 ]
             ];
         }
@@ -234,6 +242,9 @@ function sendSimpleWhatsAppMessage($phonenumber, $message, $buttons = array()) {
     --header 'D360-API-KEY: " . $apikeyval . "' \
     --header 'Content-Type: application/json' \
     --data-raw '" . json_encode($data) . "'";
+    
+    // For debugging, log the command
+    error_log("Simple WhatsApp Command: " . $postcommand);
     
     $output = shell_exec($postcommand);
     $outputjson = json_decode($output);

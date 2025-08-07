@@ -254,33 +254,25 @@ switch ($current_stage) {
         break;
 }
 
-// Send WhatsApp message using your existing function
+// Send WhatsApp message using simple text (no template)
 $whatsapp_sent = false;
 $whatsapp_response = '';
 
 try {
-    // Prepare parameters for WhatsApp template
-    $parameters = [$bot_response];
-    
-    // Prepare buttons array for WhatsApp
-    $buttonsArray = [];
-    foreach ($buttons as $index => $button) {
-        $buttonsArray[] = [
-            'type' => 'quick_reply',
-            'payload' => $button,
-            'label' => $button
-        ];
+    // Prepare message with buttons if available
+    $message = $bot_response;
+    if (!empty($buttons)) {
+        $message .= "\n\n";
+        foreach ($buttons as $index => $button) {
+            $message .= ($index + 1) . ". " . $button . "\n";
+        }
     }
     
-    // Call your existing sendWhatsappMessage function
-    $result = sendWhatsappMessage(
+    // Use simple text message instead of template
+    $result = sendSimpleWhatsAppMessage(
         $_SESSION['user_data']['phone_number'],  // phone number
-        'leave_management_response',              // template name
-        '',                                      // filepath
-        '',                                      // filename
-        $parameters,                             // parameters
-        '',                                      // headertext
-        $buttonsArray                            // buttons array
+        $message,                                // message text
+        $buttons                                 // buttons array
     );
     
     if ($result && strpos($result, 'true~~||~~') === 0) {
