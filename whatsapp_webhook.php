@@ -1,8 +1,8 @@
 <?php
 /**
  * WhatsApp-style Leave Management Webhook
- * Handles incoming messages and returns appropriate responses
- * Can be tested with Postman
+ * Handles incoming messages and sends WhatsApp responses
+ * Integrates with existing WhatsApp API function
  */
 
 // Enable error reporting for debugging
@@ -23,6 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Include Joomla framework if needed
+// require_once 'path/to/joomla/framework.php';
+
+// Include WhatsApp helper functions
+require_once 'whatsapp_helper.php';
+
 // Get input data
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -40,6 +46,8 @@ if (!$input && $_SERVER['REQUEST_METHOD'] === 'GET') {
 $response = [
     'success' => false,
     'message' => 'Invalid request',
+    'whatsapp_sent' => false,
+    'whatsapp_response' => '',
     'bot_response' => '',
     'buttons' => [],
     'current_stage' => '',
@@ -53,6 +61,7 @@ session_start();
 if (!isset($_SESSION['user_data'])) {
     $_SESSION['user_data'] = [
         'name' => 'Akshay',
+        'phone_number' => '+919876543210', // Default phone number - change this
         'current_stage' => 'initial',
         'leave_type' => '',
         'start_date' => '',
@@ -79,18 +88,31 @@ $user_message = '';
 // Handle WhatsApp Business API format
 if (isset($input['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'])) {
     $user_message = trim(strtolower($input['entry'][0]['changes'][0]['value']['messages'][0]['text']['body']));
+    // Extract phone number from WhatsApp webhook
+    if (isset($input['entry'][0]['changes'][0]['value']['messages'][0]['from'])) {
+        $_SESSION['user_data']['phone_number'] = $input['entry'][0]['changes'][0]['value']['messages'][0]['from'];
+    }
 }
 // Handle Twilio WhatsApp format
 elseif (isset($input['Body'])) {
     $user_message = trim(strtolower($input['Body']));
+    if (isset($input['From'])) {
+        $_SESSION['user_data']['phone_number'] = $input['From'];
+    }
 }
 // Handle simple message format (for Postman testing)
 elseif (isset($input['message'])) {
     $user_message = trim(strtolower($input['message']));
+    if (isset($input['phone_number'])) {
+        $_SESSION['user_data']['phone_number'] = $input['phone_number'];
+    }
 }
 // Handle text format
 elseif (isset($input['text'])) {
     $user_message = trim(strtolower($input['text']));
+    if (isset($input['phone_number'])) {
+        $_SESSION['user_data']['phone_number'] = $input['phone_number'];
+    }
 }
 
 // If no message provided, return error
@@ -232,15 +254,58 @@ switch ($current_stage) {
         break;
 }
 
+// Send WhatsApp message using your existing function
+$whatsapp_sent = false;
+$whatsapp_response = '';
+
+try {
+    // Prepare parameters for WhatsApp template
+    $parameters = [$bot_response];
+    
+    // Prepare buttons array for WhatsApp
+    $buttonsArray = [];
+    foreach ($buttons as $index => $button) {
+        $buttonsArray[] = [
+            'type' => 'quick_reply',
+            'payload' => $button,
+            'label' => $button
+        ];
+    }
+    
+    // Call your existing sendWhatsappMessage function
+    $result = sendWhatsappMessage(
+        $_SESSION['user_data']['phone_number'],  // phone number
+        'leave_management_response',              // template name
+        '',                                      // filepath
+        '',                                      // filename
+        $parameters,                             // parameters
+        '',                                      // headertext
+        $buttonsArray                            // buttons array
+    );
+    
+    if ($result && strpos($result, 'true~~||~~') === 0) {
+        $whatsapp_sent = true;
+        $whatsapp_response = $result;
+    } else {
+        $whatsapp_response = $result;
+    }
+    
+} catch (Exception $e) {
+    $whatsapp_response = 'Error sending WhatsApp: ' . $e->getMessage();
+}
+
 // Prepare response
 $response = [
     'success' => true,
     'message' => 'Success',
+    'whatsapp_sent' => $whatsapp_sent,
+    'whatsapp_response' => $whatsapp_response,
     'bot_response' => $bot_response,
     'buttons' => $buttons,
     'current_stage' => $_SESSION['user_data']['current_stage'],
     'user_data' => [
         'name' => $_SESSION['user_data']['name'],
+        'phone_number' => $_SESSION['user_data']['phone_number'],
         'leave_type' => $_SESSION['user_data']['leave_type'],
         'start_date' => $_SESSION['user_data']['start_date'],
         'end_date' => $_SESSION['user_data']['end_date'],
