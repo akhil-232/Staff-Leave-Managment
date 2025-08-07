@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management Chatbot Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f0f0f0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            max-width: 400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: #25D366;
+            color: white;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f0f0f0;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-bubble {
+            background: #DCF8C6;
+            color: #000;
+        }
+
+        .message.bot .message-bubble {
+            background: white;
+            color: #000;
+        }
+
+        .buttons-container {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .button {
+            background: white;
+            border: 1px solid #25D366;
+            color: #25D366;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .button:hover {
+            background: #25D366;
+            color: white;
+        }
+
+        .chat-input {
+            padding: 15px;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .chat-input button {
+            padding: 10px 20px;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .chat-input button:hover {
+            background: #128C7E;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3>📱 Leave Management Bot</h3>
+        </div>
+        <div class="status" id="status">
+            Status: Ready
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here -->
+        </div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let currentButtons = [];
+        let webhookUrl = 'leave_management_webhook.php';
+
+        // Initialize chat
+        window.onload = function() {
+            addBotMessage("Hello! Please say 'Hi' or 'Apply for a leave' to start.");
+        };
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addUserMessage(message);
+                input.value = '';
+                
+                // Send to webhook
+                sendToWebhook(message);
+            }
+        }
+
+        function addUserMessage(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user';
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${message}</div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addBotMessage(message, buttons = []) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            
+            let buttonsHtml = '';
+            if (buttons.length > 0) {
+                buttonsHtml = '<div class="buttons-container">';
+                buttons.forEach(button => {
+                    buttonsHtml += `<button class="button" onclick="sendMessageFromButton('${button}')">${button}</button>`;
+                });
+                buttonsHtml += '</div>';
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${message}${buttonsHtml}</div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            currentButtons = buttons;
+        }
+
+        function sendMessageFromButton(buttonText) {
+            addUserMessage(buttonText);
+            sendToWebhook(buttonText);
+        }
+
+        function sendToWebhook(message) {
+            updateStatus('Sending message...');
+            
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateStatus('Message received');
+                
+                if (data.success) {
+                    addBotMessage(data.bot_response, data.buttons);
+                } else {
+                    addBotMessage('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                updateStatus('Error: ' + error.message);
+                addBotMessage('Sorry, there was an error processing your request.');
+            });
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = 'Status: ' + status;
+        }
+
+        // Test the webhook with a sample conversation
+        function testConversation() {
+            const testSteps = [
+                'Hi',
+                'Raise a Leave Request',
+                'Casual Leave (CL)',
+                '23-08-2025',
+                '25-08-2025',
+                'Family vacation',
+                'Yes',
+                'Main Menu',
+                'View leave history'
+            ];
+            
+            let currentStep = 0;
+            
+            function sendNextStep() {
+                if (currentStep < testSteps.length) {
+                    setTimeout(() => {
+                        addUserMessage(testSteps[currentStep]);
+                        sendToWebhook(testSteps[currentStep]);
+                        currentStep++;
+                        sendNextStep();
+                    }, 1000);
+                }
+            }
+            
+            sendNextStep();
+        }
+
+        // Add test button for demo
+        setTimeout(() => {
+            const testButton = document.createElement('button');
+            testButton.textContent = '🧪 Run Demo';
+            testButton.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                padding: 10px 15px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                z-index: 1000;
+            `;
+            testButton.onclick = testConversation;
+            document.body.appendChild(testButton);
+        }, 2000);
+    </script>
+</body>
+</html>
