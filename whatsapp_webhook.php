@@ -43,23 +43,23 @@ if (!$input && $_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 // Default response structure
-$response = [
+$response = array(
     'success' => false,
     'message' => 'Invalid request',
     'whatsapp_sent' => false,
     'whatsapp_response' => '',
     'bot_response' => '',
-    'buttons' => [],
+    'buttons' => array(),
     'current_stage' => '',
-    'user_data' => []
-];
+    'user_data' => array()
+);
 
 // Session management
 session_start();
 
 // Initialize user session data if not exists
 if (!isset($_SESSION['user_data'])) {
-    $_SESSION['user_data'] = [
+    $_SESSION['user_data'] = array(
         'name' => 'Akshay',
         'phone_number' => '+919876543210', // Default phone number - change this
         'current_stage' => 'initial',
@@ -67,19 +67,19 @@ if (!isset($_SESSION['user_data'])) {
         'start_date' => '',
         'end_date' => '',
         'reason' => '',
-        'leave_history' => [
-            [
+        'leave_history' => array(
+            array(
                 'start_date' => '23-08-2025',
                 'end_date' => '25-08-2025',
                 'status' => 'Pending Approval'
-            ],
-            [
+            ),
+            array(
                 'start_date' => '17-07-2025',
                 'end_date' => '17-07-2025',
                 'status' => 'Approved'
-            ]
-        ]
-    ];
+            )
+        )
+    );
 }
 
 // Extract user message from different possible formats
@@ -124,14 +124,14 @@ if (empty($user_message)) {
 
 // Process user message based on current stage
 $bot_response = '';
-$buttons = [];
+$buttons = array();
 $current_stage = $_SESSION['user_data']['current_stage'];
 
 switch ($current_stage) {
     case 'initial':
-        if (in_array($user_message, ['hi', 'hello', 'apply for a leave'])) {
+        if (in_array($user_message, array('hi', 'hello', 'apply for a leave'))) {
             $bot_response = "Dear " . $_SESSION['user_data']['name'] . ", please choose any of the options listed below:";
-            $buttons = ['Raise a Leave Request', 'View leave history'];
+            $buttons = array('Raise a Leave Request', 'View leave history');
             $_SESSION['user_data']['current_stage'] = 'main_menu';
         } else {
             $bot_response = "Hello! Please say 'Hi' or 'Apply for a leave' to start.";
@@ -141,31 +141,31 @@ switch ($current_stage) {
     case 'main_menu':
         if ($user_message === 'raise a leave request' || $user_message === 'apply for a leave') {
             $bot_response = "Pick the relevant leave type to initiate your request.";
-            $buttons = ['1 Hour Permission', 'Casual Leave (CL)', 'On Duty (OD)', 'Main Menu'];
+            $buttons = array('1 Hour Permission', 'Casual Leave (CL)', 'On Duty (OD)', 'Main Menu');
             $_SESSION['user_data']['current_stage'] = 'leave_type_selection';
         } elseif ($user_message === 'view leave history' || $user_message === 'check leave history') {
             $bot_response = "Dear " . $_SESSION['user_data']['name'] . ", your recent leave history:\n";
             foreach ($_SESSION['user_data']['leave_history'] as $leave) {
                 $bot_response .= "- " . $leave['start_date'] . " to " . $leave['end_date'] . " – *" . $leave['status'] . "*\n";
             }
-            $buttons = ['Main Menu'];
+            $buttons = array('Main Menu');
             $_SESSION['user_data']['current_stage'] = 'main_menu';
         } else {
             $bot_response = "Please choose a valid option.";
-            $buttons = ['Raise a Leave Request', 'View leave history'];
+            $buttons = array('Raise a Leave Request', 'View leave history');
         }
         break;
 
     case 'leave_type_selection':
-        if (in_array($user_message, ['casual leave (cl)', 'casual leave', 'cl'])) {
+        if (in_array($user_message, array('casual leave (cl)', 'casual leave', 'cl'))) {
             $_SESSION['user_data']['leave_type'] = 'Casual Leave (CL)';
             $bot_response = "Start date of leave (dd/mm/yyyy):";
             $_SESSION['user_data']['current_stage'] = 'start_date';
-        } elseif (in_array($user_message, ['1 hour permission', '1 hour', 'hour permission'])) {
+        } elseif (in_array($user_message, array('1 hour permission', '1 hour', 'hour permission'))) {
             $_SESSION['user_data']['leave_type'] = '1 Hour Permission';
             $bot_response = "Start date of leave (dd/mm/yyyy):";
             $_SESSION['user_data']['current_stage'] = 'start_date';
-        } elseif (in_array($user_message, ['on duty (od)', 'on duty', 'od'])) {
+        } elseif (in_array($user_message, array('on duty (od)', 'on duty', 'od'))) {
             $_SESSION['user_data']['leave_type'] = 'On Duty (OD)';
             $bot_response = "Start date of leave (dd/mm/yyyy):";
             $_SESSION['user_data']['current_stage'] = 'start_date';
@@ -175,7 +175,7 @@ switch ($current_stage) {
             $_SESSION['user_data']['current_stage'] = 'main_menu';
         } else {
             $bot_response = "Please select a valid leave type.";
-            $buttons = ['1 Hour Permission', 'Casual Leave (CL)', 'On Duty (OD)', 'Main Menu'];
+            $buttons = array('1 Hour Permission', 'Casual Leave (CL)', 'On Duty (OD)', 'Main Menu');
         }
         break;
 
@@ -207,7 +207,7 @@ switch ($current_stage) {
             $bot_response = "Dear " . $_SESSION['user_data']['name'] . ", your " . $_SESSION['user_data']['leave_type'] . 
                           " request from " . $_SESSION['user_data']['start_date'] . " to " . $_SESSION['user_data']['end_date'] . 
                           " has been successfully registered. Please choose one of the options below to proceed with the approval process.";
-            $buttons = ['Yes', 'No'];
+            $buttons = array('Yes', 'No');
             $_SESSION['user_data']['current_stage'] = 'approval_confirmation';
         } else {
             $bot_response = "Please provide a reason for your leave request.";
@@ -217,15 +217,15 @@ switch ($current_stage) {
     case 'approval_confirmation':
         if ($user_message === 'yes') {
             $bot_response = "Leave application submitted successfully.";
-            $buttons = ['Main Menu'];
+            $buttons = array('Main Menu');
             $_SESSION['user_data']['current_stage'] = 'main_menu';
             
             // Add to leave history
-            $_SESSION['user_data']['leave_history'][] = [
+            $_SESSION['user_data']['leave_history'][] = array(
                 'start_date' => $_SESSION['user_data']['start_date'],
                 'end_date' => $_SESSION['user_data']['end_date'],
                 'status' => 'Pending Approval'
-            ];
+            );
             
             // Reset leave request data
             $_SESSION['user_data']['leave_type'] = '';
@@ -234,7 +234,7 @@ switch ($current_stage) {
             $_SESSION['user_data']['reason'] = '';
         } elseif ($user_message === 'no') {
             $bot_response = "Leave request cancelled. Returning to main menu.";
-            $buttons = ['Main Menu'];
+            $buttons = array('Main Menu');
             $_SESSION['user_data']['current_stage'] = 'main_menu';
             
             // Reset leave request data
@@ -244,7 +244,7 @@ switch ($current_stage) {
             $_SESSION['user_data']['reason'] = '';
         } else {
             $bot_response = "Please select Yes or No to proceed.";
-            $buttons = ['Yes', 'No'];
+            $buttons = array('Yes', 'No');
         }
         break;
 
@@ -287,7 +287,7 @@ try {
 }
 
 // Prepare response
-$response = [
+$response = array(
     'success' => true,
     'message' => 'Success',
     'whatsapp_sent' => $whatsapp_sent,
@@ -295,15 +295,15 @@ $response = [
     'bot_response' => $bot_response,
     'buttons' => $buttons,
     'current_stage' => $_SESSION['user_data']['current_stage'],
-    'user_data' => [
+    'user_data' => array(
         'name' => $_SESSION['user_data']['name'],
         'phone_number' => $_SESSION['user_data']['phone_number'],
         'leave_type' => $_SESSION['user_data']['leave_type'],
         'start_date' => $_SESSION['user_data']['start_date'],
         'end_date' => $_SESSION['user_data']['end_date'],
         'reason' => $_SESSION['user_data']['reason']
-    ]
-];
+    )
+);
 
 // Return JSON response
 echo json_encode($response, JSON_PRETTY_PRINT);

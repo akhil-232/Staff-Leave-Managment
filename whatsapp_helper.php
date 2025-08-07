@@ -198,43 +198,43 @@ function sendSimpleWhatsAppMessage($phonenumber, $message, $buttons = array()) {
     
     // If no buttons, send simple text message
     if (empty($buttons)) {
-        $data = [
+        $data = array(
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
             "to" => $phonenumber,
             "type" => "text",
-            "text" => [
+            "text" => array(
                 "body" => $message
-            ]
-        ];
+            )
+        );
     } else {
         // If buttons provided, send interactive message
-        $data = [
+        $data = array(
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
             "to" => $phonenumber,
             "type" => "interactive",
-            "interactive" => [
+            "interactive" => array(
                 "type" => "button",
-                "body" => [
+                "body" => array(
                     "text" => $message
-                ],
-                "action" => [
-                    "buttons" => []
-                ]
-            ]
-        ];
+                ),
+                "action" => array(
+                    "buttons" => array()
+                )
+            )
+        );
         
         // Add buttons (max 3 buttons allowed by WhatsApp)
         $buttonCount = min(count($buttons), 3);
         for ($i = 0; $i < $buttonCount; $i++) {
-            $data["interactive"]["action"]["buttons"][] = [
+            $data["interactive"]["action"]["buttons"][] = array(
                 "type" => "reply",
-                "reply" => [
+                "reply" => array(
                     "id" => "btn_" . $i,
                     "title" => $buttons[$i]
-                ]
-            ];
+                )
+            );
         }
     }
     

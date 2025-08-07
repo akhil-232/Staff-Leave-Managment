@@ -20,19 +20,19 @@ echo "Result: " . $result1 . "\n\n";
 
 // Test 2: Message with buttons
 echo "2. Testing message with buttons...\n";
-$buttons = ['Raise a Leave Request', 'View leave history'];
+$buttons = array('Raise a Leave Request', 'View leave history');
 $result2 = sendSimpleWhatsAppMessage($test_phone, "Dear Akshay, please choose any of the options listed below:", $buttons);
 echo "Result: " . $result2 . "\n\n";
 
 // Test 3: Leave type selection
 echo "3. Testing leave type selection...\n";
-$leave_buttons = ['1 Hour Permission', 'Casual Leave (CL)', 'On Duty (OD)'];
+$leave_buttons = array('1 Hour Permission', 'Casual Leave (CL)', 'On Duty (OD)');
 $result3 = sendSimpleWhatsAppMessage($test_phone, "Pick the relevant leave type to initiate your request.", $leave_buttons);
 echo "Result: " . $result3 . "\n\n";
 
 // Test 4: Confirmation buttons
 echo "4. Testing confirmation buttons...\n";
-$confirm_buttons = ['Yes', 'No'];
+$confirm_buttons = array('Yes', 'No');
 $result4 = sendSimpleWhatsAppMessage($test_phone, "Please confirm your leave request:", $confirm_buttons);
 echo "Result: " . $result4 . "\n\n";
 
